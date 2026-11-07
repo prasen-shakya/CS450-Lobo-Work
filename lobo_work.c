@@ -89,7 +89,7 @@ main(int argc, char **argv)
 
    (void) worker_count;
    LoboWorkPool *pool = lobo_work_pool_create(
-      1, queue_capacity, run_job);
+      worker_count, queue_capacity, run_job);
    if (pool == NULL) {
       perror("lobo_work_pool_create");
       return EXIT_FAILURE;
@@ -110,9 +110,9 @@ main(int argc, char **argv)
    LoboWorkPoolStats stats;
    lobo_work_pool_get_stats(pool, &stats);
    printf("submitted: %lu; accepted: %lu; rejected: %lu; "
-          "completed: %lu; workers: 1; queue_capacity: %d; "
+          "completed: %lu; workers: %d; queue_capacity: %d; "
           "max_active: %lu;\n",
-          submitted, stats.accepted, stats.rejected, stats.completed,
+          submitted, stats.accepted, stats.rejected, stats.completed, worker_count,
           queue_capacity, stats.max_active);
    lobo_work_pool_destroy(pool);
    return result < 0 ? EXIT_FAILURE : EXIT_SUCCESS;
