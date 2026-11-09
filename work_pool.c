@@ -6,9 +6,13 @@
  * queue and the pool interface before concurrency is added.
  */
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "work_pool.h"
 
 #include "work_queue.h"
+
+#include "pthread.h"
 
 #include <stdlib.h>
 
@@ -17,6 +21,9 @@ struct LoboWorkPool {
    LoboWorkRunner runner;
    LoboWorkQueue queue;
    LoboWorkPoolStats stats;
+
+   pthread_mutex_t lock;
+   pthread_t *threads;
 };
 
 LoboWorkPool *
@@ -29,6 +36,10 @@ lobo_work_pool_create(int worker_count, int queue_capacity,
       free(pool);
       return NULL;
    }
+
+   pthread_mutex_init(&pool->lock, NULL);
+   pool->threads = malloc(sizeof(pthread_t) * worker_count);
+
 
    pool->worker_count = worker_count;
    pool->runner = runner;

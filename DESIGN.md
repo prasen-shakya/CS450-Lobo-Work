@@ -5,8 +5,8 @@ replacing each `@TODO` line.
 
 ## Team members:
 
-Prasen Shakya
-Luis Cortes
+- Prasen Shakya
+- Luis Cortes
 
 
 ## What each person contributed:
