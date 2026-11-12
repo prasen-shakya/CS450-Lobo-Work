@@ -110,16 +110,24 @@ lobo_work_pool_create(int worker_count, int queue_capacity,
 int
 lobo_work_pool_add(LoboWorkPool *pool, const LoboWorkJob *job)
 {
-   pthread_mutex_lock(&pool -> lock);
+   pthread_mutex_lock(&pool->lock);
 
-   while (!lobo_work_queue_try_add(&pool->queue, job)) {
-      pthread_cond_wait(&pool -> not_full, &pool -> lock);
+   // Keep trying until the job fits or the pool is closed
+   while (!pool->closed && !lobo_work_queue_try_add(&pool->queue, job)) {
+      pthread_cond_wait(&pool->not_full, &pool->lock);
    }
 
-   pthread_cond_signal(&pool->not_empty);
+   // If the pool was closed, we can't accept any more jobs
+   if (pool->closed) {
+      pool->stats.rejected++;
+      pthread_mutex_unlock(&pool->lock);
+      return 0;
+   }
 
    pool->stats.accepted++;
-   pthread_mutex_unlock(&pool -> lock);
+   
+   pthread_cond_signal(&pool->not_empty);
+   pthread_mutex_unlock(&pool->lock);
    return 1;
 }
 
