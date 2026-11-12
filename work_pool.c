@@ -35,10 +35,9 @@ struct LoboWorkPool {
 
 static void *worker(void *arg) {
    LoboWorkPool *pool = arg;
+   LoboWorkJob curJob;
 
    while (1) {
-      LoboWorkJob curJob;
-
       pthread_mutex_lock(&pool->lock);
 
       while (pool->queue.count == 0 && !pool->closed) {
@@ -51,6 +50,7 @@ static void *worker(void *arg) {
          return NULL;
       }
 
+      // Get the latest job
       if (!lobo_work_queue_pop(&pool->queue, &curJob)) {
          pthread_mutex_unlock(&pool->lock);
          fprintf(stderr, "Queue pop failed");
@@ -65,6 +65,7 @@ static void *worker(void *arg) {
          pool->stats.max_active = pool->active;
       }
 
+      // Unlock so that other jobs can run
       pthread_mutex_unlock(&pool->lock);
 
       // Run the job
@@ -88,15 +89,16 @@ lobo_work_pool_create(int worker_count, int queue_capacity,
       return NULL;
    }
 
+   // Initialize mutex and condition variables
    pthread_mutex_init(&pool->lock, NULL);
    pthread_cond_init(&pool -> not_empty, NULL);
    pthread_cond_init(&pool->not_full, NULL);
 
    pool->threads = malloc(sizeof(pthread_t) * worker_count);
-
    pool->worker_count = worker_count;
    pool->runner = runner;
 
+   // Create threads
    for (int i = 0; i < worker_count; i++) {
       if (pthread_create(&pool->threads[i], NULL, worker, pool) != 0) {
             fprintf(stderr, "pthread_create failed\n");
@@ -138,11 +140,13 @@ lobo_work_pool_close(LoboWorkPool *pool)
 
    pool->closed = 1;
 
+   // Tell all of the threads to clean up
    pthread_cond_broadcast(&pool->not_empty);
    pthread_cond_broadcast(&pool->not_full);
 
    pthread_mutex_unlock(&pool ->lock);
 
+   // Wait for all threads to finish
    for (int i = 0; i < pool->worker_count; i++) {
       pthread_join(pool->threads[i], NULL);
    }

@@ -11,7 +11,7 @@ replacing each `@TODO` line.
 
 ## What each person contributed:
 
-@TODO
+- Prasen contributed by implementing the mutex locks, conditional variables, and implementing the worker function.
 
 
 ## How you coordinated changes and testing:
@@ -65,7 +65,39 @@ Associated mutex:
 Condition being waited for:
 ```
 
-@TODO
+### Mutexes
+```text
+Mutex variable name or struct field: lock
+Location: work_pool.c, struct LoboWorkPool, field lock
+Initialized by (thread-role): main thread
+Destroyed by (thread-role): main thread
+Threads that lock it (thread-role): both
+Threads that unlock it (thread-role): both
+Shared state protected: queue, stats, active, and closed.
+```
+
+### Condition Variables
+```text
+Condition-variable name or struct field: not_empty
+Location: work_pool.c, struct LoboWorkPool, field not_empty
+Initialized by (thread-role): main thread
+Destroyed by (thread-role): main thread
+Threads that wait on it (thread-role): worker threads
+Threads that signal or broadcast it (thread-role): main thread
+Associated mutex: lock
+Condition being waited for: the queue has at least one job or the pool is closed.
+```
+
+```text
+Condition-variable name or struct field: not_full
+Location: work_pool.c, struct LoboWorkPool, field not_full
+Initialized by (thread-role): main thread
+Destroyed by (thread-role): main thread
+Threads that wait on it (thread-role): main thread
+Threads that signal or broadcast it (thread-role): worker threads
+Associated mutex: lock
+Condition being waited for: the queue has room for another job or the pool is closed.
+```
 
 
 ## Worker-loop summary
