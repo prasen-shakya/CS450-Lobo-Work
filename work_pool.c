@@ -125,7 +125,7 @@ lobo_work_pool_add(LoboWorkPool *pool, const LoboWorkJob *job)
    }
 
    pool->stats.accepted++;
-   
+
    pthread_cond_signal(&pool->not_empty);
    pthread_mutex_unlock(&pool->lock);
    return 1;
@@ -134,12 +134,17 @@ lobo_work_pool_add(LoboWorkPool *pool, const LoboWorkJob *job)
 void
 lobo_work_pool_close(LoboWorkPool *pool)
 {
-   LoboWorkJob job;
+   pthread_mutex_lock(&pool -> lock);
 
-   while (lobo_work_queue_pop(&pool->queue, &job)) {
-      pool->stats.max_active = 1;
-      pool->runner(&job);
-      pool->stats.completed++;
+   pool->closed = 1;
+
+   pthread_cond_broadcast(&pool->not_empty);
+   pthread_cond_broadcast(&pool->not_full);
+
+   pthread_mutex_unlock(&pool ->lock);
+
+   for (int i = 0; i < pool->worker_count; i++) {
+      pthread_join(pool->threads[i], NULL);
    }
 }
 
@@ -147,7 +152,9 @@ void
 lobo_work_pool_get_stats(LoboWorkPool *pool,
                          LoboWorkPoolStats *stats)
 {
+   pthread_mutex_lock(&pool->lock);
    *stats = pool->stats;
+   pthread_mutex_unlock(&pool->lock);
 }
 
 void
