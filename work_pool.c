@@ -160,6 +160,10 @@ lobo_work_pool_get_stats(LoboWorkPool *pool,
 void
 lobo_work_pool_destroy(LoboWorkPool *pool)
 {
+   pthread_cond_destroy(&pool->not_full);
+   pthread_cond_destroy(&pool->not_empty);
+   pthread_mutex_destroy(&pool->lock);
+   free(pool->threads);
    lobo_work_queue_destroy(&pool->queue);
    free(pool);
 }
