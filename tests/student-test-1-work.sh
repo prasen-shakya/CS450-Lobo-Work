@@ -27,3 +27,33 @@ How we check full execution:
 Every job is accepted, no job is rejected, every job completes, max_active
 is at least one, the exit status is zero and the elapsed wall time is long
 enough to show the sleeps actually ran.
+
+Command:
+--------
+./lobo_work.x --workers 2 --queue 4 < sample_jobs/short.txt
+EOF
+
+START=$(date +%s%N)
+"$PROGRAM" --workers 2 --queue 4 <"$SAMPLES/short.txt" >"$OUT" 2>&1
+STATUS=$?
+END=$(date +%s%N)
+ELAPSED_MS=$(( (END - START) / 1000000 ))
+
+grep -q 'submitted: 3;' "$OUT" || STATUS=1
+grep -q 'accepted: 3;' "$OUT" || STATUS=1
+grep -q 'rejected: 0;' "$OUT" || STATUS=1
+grep -q 'completed: 3;' "$OUT" || STATUS=1
+grep -q 'workers: 2;' "$OUT" || STATUS=1
+grep -q 'queue_capacity: 4;' "$OUT" || STATUS=1
+MAX_ACTIVE=$(sed -n 's/.*max_active: \([0-9][0-9]*\).*/\1/p' "$OUT")
+test -n "$MAX_ACTIVE" || STATUS=1
+test "$MAX_ACTIVE" -ge 1 2>/dev/null || STATUS=1
+test "$MAX_ACTIVE" -le 2 2>/dev/null || STATUS=1
+test "$ELAPSED_MS" -ge 70 2>/dev/null || STATUS=1
+
+if test "$STATUS" -eq 0; then
+   echo "PASS $TEST"
+else
+   echo "FAIL $TEST"
+   exit 1
+fi
