@@ -13,6 +13,10 @@ replacing each `@TODO` line.
 
 - Prasen contributed by implementing the mutex locks, conditional variables, and implementing the worker function.
 
+- Luis: Worked on student-test-1; Inspired by test-2-basic-work.sh but instead of using
+placeholder jobs with no duration we tested on the 'short.xt' sample job given.
+Will work on student-test-2 once test-1 is confirmed to be working on blue.
+
 
 ## How you coordinated changes and testing:
 
