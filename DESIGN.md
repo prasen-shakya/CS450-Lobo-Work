@@ -13,9 +13,9 @@ replacing each `@TODO` line.
 
 - Prasen contributed by implementing the mutex locks, conditional variables, and implementing the worker function.
 
-- Luis: Worked on student-test-1; Inspired by test-2-basic-work.sh but instead of using
-placeholder jobs with no duration we tested on the 'short.xt' sample job given.
-Will work on student-test-2 once test-1 is confirmed to be working on blue.
+- Luis: I worked on student-test-1; It was inspired by test-2-basic-work.sh but instead of using
+placeholder jobs with no duration we tested on the 'short.xt' sample job given. I also made sure that our code ran on blue,
+and that all the tests behaved as expected.
 
 
 ## How you coordinated changes and testing:
@@ -140,7 +140,20 @@ For each test, explain why it adds meaningful coverage beyond the supplied tests
 
 ### `student-test-1-work.sh`
 
-@TODO
+Test: student-test-1-work.sh
+Purpose: Check that the sample job 'short.txt' is fully executed with jobs that
+have real durations (not zero).
+Command: ./lobo_work.x --workers 2 --queue 4 < sample_jobs/short.txt
+Expected result: Exit status is zero. Final stats line shows submitted: 3,
+accepted: 3, rejected: 0, completed: 3, workers: 2, queue_capacity: 4, and
+max_active between 1 and 2. Elapsed wall time is at least 70 ms so we know
+the sleeps actually ran.
+Observed result: PASS. All three jobs are accepted and completed, no jobs are
+rejected, max_active stays within 1 and 2, the run takes long enough to
+confirm the jobs actually slept.
+Failure this test would reveal: Jobs being skipped or dropped, max_active
+exceeding the worker count, the pool returning before work finishes, the
+runner being short circuited so the sleeps never actually happen.
 
 
 ### `student-test-2-concurrency-or-stress.sh`
