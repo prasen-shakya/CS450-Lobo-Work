@@ -13,7 +13,7 @@ replacing each `@TODO` line.
 
 - Prasen contributed by implementing the mutex locks, conditional variables, and implementing the worker function.
 
-- Luis: I worked on student-test-1; It was inspired by test-2-basic-work.sh but instead of using
+- Luis: I worked on student-test-1. It was inspired by test-2-basic-work.sh but instead of using
 placeholder jobs with no duration we tested on the 'short.xt' sample job given. I also made sure that our code ran on blue, and that all the tests behaved as expected.
 
 
@@ -119,7 +119,23 @@ Address only the important implementation decisions:
 Do not restate the assignment requirements. Describe how your code implements
 them.
 
-@TODO
+Each worker loops forever until the pool closes. On every iteration it grabs
+the pool lock and waits on not_empty as long as the queue is empty and the
+pool is still open. If the worker wakes up and the queue is still empty, that
+means the pool has been closed so it drops the lock and returns.
+
+If its not close it pops the oldest job off the queue, signals not_full so any
+blocked submitter can make progress, then it increases 'active'. Then it releases 
+the lock before calling the runner which is what actually lets multiple workers overlap. 
+When the runner returns, the worker reacquires the lock just long enough to decrement 
+active and increase completed, then heads back to the top of the loop.
+
+Closing is what actually stops the loop. lobo_work_pool_close sets 'closed' and
+broadcasts both condition variables so any worker waiting on not_empty
+wakes up. Workers that still see jobs on the queue keep draining them, they
+only exit once the queue is actually empty. After the broadcast, 'close'
+joins every worker so by the time it returns every accepted job has run.
+
 
 
 ## Testing
@@ -165,9 +181,24 @@ runner being short circuited so the sleeps never actually happen.
 @TODO
 
 
+### `student-test-4-comments-blanks.sh` (extra credit)
+
+Test: student-test-4-comments-blanks.sh
+Purpose: Check that the sample job 'comments-and-blanks.txt' is parsed
+correctly, with comment lines and blank lines skipped so that only the valid jobs
+end up in the final stats.
+Command: ./lobo_work.x --workers 2 --queue 4 < sample_jobs/comments-and-blanks.txt
+Expected result: Exit status is zero. Final stats line shows submitted: 3,
+accepted: 3, rejected: 0, completed: 3, workers: 2, queue_capacity: 4, and
+max_active between 1 and 2 (only the 3 valid jobs count, not the comments or
+blank lines).
+Observed result: PASS. Only the 3 valid jobs (alpha, beta, gamma) show up in
+the stats, nothing is rejected, and max_active stays within 1 and 2.
+Failure this test would reveal: The parser counting comment or blank lines as
+jobs, inflating submitted/accepted, or the pool mishandling input that has
+gaps between valid lines.
+
+
 ## Additional design decisions
 
-Use this section only for decisions that are not already specified by the
-assignment or represented in the synchronization inventory.
-
-@TODO
+N/A
