@@ -28,7 +28,29 @@ If you changed a provided file or public interface, explain the change and its
 effect on the rest of the program. Otherwise, state that the provided interfaces
 were preserved.
 
-@TODO
+**Files we didn't change:** 
+- `work_pool.h`
+- `work_queue.c`
+- `work_queue.h`
+- `job_parse.c`
+- `job_parse.h` 
+- `lobo_work.h`
+- `Makefile`
+
+**Changed files:**
+
+- `work_pool.c`: We modified `work_pool.c` because this was where we did our pool implementation.
+  The changes we made to `work_pool.c` do not affect the rest of the program
+  other than making the pool actually run jobs on multiple worker threads.
+- `lobo_work.c`: We modified `lobo_work.c` so that the `worker_count` argument
+  gets passed into `lobo_work_pool_create` and printed in the final stats line.
+- `tests/`: We added `student-test-1-work.sh`,
+  `student-test-2-concurrency-or-stress.sh`, and
+  `student-test-3-shutdown-or-parsing-or-statistics.sh`.
+
+**Public interface:**
+
+We did not cahnge any of the public interfaces.
 
 ## Worker-pool synchronization
 
