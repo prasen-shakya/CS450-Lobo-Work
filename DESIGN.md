@@ -8,7 +8,6 @@ replacing each `@TODO` line.
 - Prasen Shakya
 - Luis Cortes
 
-
 ## What each person contributed:
 
 - Prasen contributed by implementing the mutex locks, conditional variables, and implementing the worker function.
@@ -17,11 +16,9 @@ replacing each `@TODO` line.
 placeholder jobs with no duration we tested on the 'short.xt' sample job given. I also made sure that our code ran on blue,
 and that all the tests behaved as expected.
 
-
 ## How you coordinated changes and testing:
 
 @TODO
-
 
 ## Module and interface changes
 
@@ -32,7 +29,6 @@ effect on the rest of the program. Otherwise, state that the provided interfaces
 were preserved.
 
 @TODO
-
 
 ## Worker-pool synchronization
 
@@ -70,6 +66,7 @@ Condition being waited for:
 ```
 
 ### Mutexes
+
 ```text
 Mutex variable name or struct field: lock
 Location: work_pool.c, struct LoboWorkPool, field lock
@@ -81,6 +78,7 @@ Shared state protected: queue, stats, active, and closed.
 ```
 
 ### Condition Variables
+
 ```text
 Condition-variable name or struct field: not_empty
 Location: work_pool.c, struct LoboWorkPool, field not_empty
@@ -103,7 +101,6 @@ Associated mutex: lock
 Condition being waited for: the queue has room for another job or the pool is closed.
 ```
 
-
 ## Worker-loop summary
 
 Describe the worker loop in a few paragraphs or a short fenced pseudocode block.
@@ -120,8 +117,40 @@ Address only the important implementation decisions:
 Do not restate the assignment requirements. Describe how your code implements
 them.
 
-@TODO
+For our implemenation, we have each worker running an infinite loop that starts
+by locking `pool->lock`. While there isn't a job available and the pool isn't closed,
+the worker waits on the `not_empty` condition. The wait also releases the mutex while
+the worker sleeps.
 
+Once the worker gets the lock again and the queue is non-empty, the worker then
+calls `lobo_work_queue_pop` to copy the oldest job into a local variable, and then
+the worker signals `not_full` so that a blocked producer can then reuse the freed slot.
+The worker then increments `active`, and updates `stats.max_active` if `active`
+is greater than the current `stats.max_active` value. After this the worker releases the mutex
+and the job runner is called so that other workers and the main thread can acquire the lock while the job runs.
+
+When the job runner finishes, the worker relocks the mutex, decrements `active`,
+increments `stats.completed`, and then unlocks. Afterward, it then loops again for the next job.
+
+The worker exits when the wait loop ends with `queue.count == 0`, which
+means the queue is empty and `closed` is set. `lobo_work_pool_close` sets
+`closed` and broadcasts `not_empty`, so idle workers wake up and return. A
+worker that wakes while jobs remain in the queue keeps popping and running them,
+so every accepted job finishes before the workers return. `close` then joins
+all worker threads, so no job is lost or still running when it returns.
+
+```text
+loop:
+    lock
+    while queue empty and not closed: wait(not_empty)
+    if queue empty:
+        unlock; return
+    pop job; signal(not_full)
+    active++; max_active = max(max_active, active)
+    unlock
+    runner(job)                # no lock held
+    lock; active--; completed++; unlock
+```
 
 ## Testing
 
@@ -155,16 +184,13 @@ Failure this test would reveal: Jobs being skipped or dropped, max_active
 exceeding the worker count, the pool returning before work finishes, the
 runner being short circuited so the sleeps never actually happen.
 
-
 ### `student-test-2-concurrency-or-stress.sh`
 
 @TODO
 
-
 ### `student-test-3-shutdown-or-parsing-or-statistics.sh`
 
 @TODO
-
 
 ## Additional design decisions
 
