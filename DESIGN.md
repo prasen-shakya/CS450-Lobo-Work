@@ -30,7 +30,8 @@ If you changed a provided file or public interface, explain the change and its
 effect on the rest of the program. Otherwise, state that the provided interfaces
 were preserved.
 
-@TODO
+student-test-1-work.sh: Added implementation for student-test-1.
+student-test-4-comments-blanks.sh: Added implementation for student-test-4 (extra credit).
 
 
 ## Worker-pool synchronization
@@ -156,19 +157,11 @@ For each test, explain why it adds meaningful coverage beyond the supplied tests
 ### `student-test-1-work.sh`
 
 Test: student-test-1-work.sh
-Purpose: Check that the sample job 'short.txt' is fully executed with jobs that
-have real durations (not zero).
+Purpose: Check that the sample job 'short.txt' is fully executed with jobs that have real durations (not zero).
 Command: ./lobo_work.x --workers 2 --queue 4 < sample_jobs/short.txt
-Expected result: Exit status is zero. Final stats line shows submitted: 3,
-accepted: 3, rejected: 0, completed: 3, workers: 2, queue_capacity: 4, and
-max_active between 1 and 2. Elapsed wall time is at least 70 ms so we know
-the sleeps actually ran.
-Observed result: PASS. All three jobs are accepted and completed, no jobs are
-rejected, max_active stays within 1 and 2, the run takes long enough to
-confirm the jobs actually slept.
-Failure this test would reveal: Jobs being skipped or dropped, max_active
-exceeding the worker count, the pool returning before work finishes, the
-runner being short circuited so the sleeps never actually happen.
+Expected result: Exit status is zero. Final stats line shows submitted: 3, accepted: 3, rejected: 0, completed: 3, workers: 2, queue_capacity: 4, and max_active between 1 and 2. Elapsed wall time is at least 70 ms so we know the sleeps actually ran.
+Observed result: PASS. All three jobs are accepted and completed, no jobs are rejected, max_active stays within 1 and 2, the run takes long enough to confirm the jobs actually slept.
+Failure this test would reveal: Jobs being skipped or dropped, max_active exceeding the worker count, the pool returning before work finishes, the runner being short circuited so the sleeps never actually happen.
 
 
 ### `student-test-2-concurrency-or-stress.sh`
@@ -184,19 +177,11 @@ runner being short circuited so the sleeps never actually happen.
 ### `student-test-4-comments-blanks.sh` (extra credit)
 
 Test: student-test-4-comments-blanks.sh
-Purpose: Check that the sample job 'comments-and-blanks.txt' is parsed
-correctly, with comment lines and blank lines skipped so that only the valid jobs
-end up in the final stats.
+Purpose: Check that the sample job 'comments-and-blanks.txt' is parsed correctly, with comment lines and blank lines skipped so that only the valid jobs end up in the final stats.
 Command: ./lobo_work.x --workers 2 --queue 4 < sample_jobs/comments-and-blanks.txt
-Expected result: Exit status is zero. Final stats line shows submitted: 3,
-accepted: 3, rejected: 0, completed: 3, workers: 2, queue_capacity: 4, and
-max_active between 1 and 2 (only the 3 valid jobs count, not the comments or
-blank lines).
-Observed result: PASS. Only the 3 valid jobs (alpha, beta, gamma) show up in
-the stats, nothing is rejected, and max_active stays within 1 and 2.
-Failure this test would reveal: The parser counting comment or blank lines as
-jobs, inflating submitted/accepted, or the pool mishandling input that has
-gaps between valid lines.
+Expected result: Exit status is zero. Final stats line shows submitted: 3, accepted: 3, rejected: 0, completed: 3, workers: 2, queue_capacity: 4, and max_active between 1 and 2.
+Observed result: PASS. Only the 3 valid jobs (alpha, beta, gamma) show up in the stats, nothing is rejected, and max_active stays within 1 and 2.
+Failure this test would reveal: The parser counting comment or blank lines as jobs, inflating submitted/accepted, or the pool mishandling input that has gaps between valid lines.
 
 
 ## Additional design decisions
