@@ -7,6 +7,7 @@ replacing each `@TODO` line.
 
 - Prasen Shakya
 - Luis Cortes
+- Evode Manirahari
 
 
 ## What each person contributed:
@@ -15,6 +16,11 @@ replacing each `@TODO` line.
 
 - Luis: I worked on student-test-1. It was inspired by test-2-basic-work.sh but instead of using
 placeholder jobs with no duration we tested on the 'short.xt' sample job given. I also made sure that our code ran on blue, and that all the tests behaved as expected.
+
+- Evode: Wrote student-test-2 to check that 40 jobs complete under
+  queue pressure while multiple workers run concurrently. Wrote
+  student-test-3 to verify that malformed input stops further
+  submissions while previously accepted jobs finish.
 
 
 ## How you coordinated changes and testing:
@@ -166,12 +172,38 @@ Failure this test would reveal: Jobs being skipped or dropped, max_active exceed
 
 ### `student-test-2-concurrency-or-stress.sh`
 
-@TODO
+Test: Concurrency under queue pressure.
+Purpose: Check that 40 jobs complete with 4 workers and a queue
+capacity of 2, while multiple workers execute jobs concurrently.
+Command: { i=1; while [ "$i" -le 40 ]; do printf 'job%s 20\n' "$i"; i=$((i+1)); done; } | ./lobo_work.x -w 4 -q 2
+Expected result: Exit status 0; submitted, accepted, and completed
+are all 40; rejected is 0; max_active is between 2 and 4.
+Observed result: PASS. All 40 jobs completed, with max_active of 4.
+Failure this test would reveal: Lost jobs, incorrect statistics,
+lack of concurrency, or deadlock under queue pressure.
 
+This adds coverage beyond test-13 (small queue, no concurrency check)
+and test-14 (concurrency check, but the queue never fills) by combining
+a workload much larger than the queue with an explicit concurrency
+check in the same run.
 
 ### `student-test-3-shutdown-or-parsing-or-statistics.sh`
 
-@TODO
+Test: Malformed input with outstanding work.
+Purpose: Check that a parsing error stops further input processing
+while allowing previously accepted jobs to finish.
+Command: printf 'first 30\nsecond 30\nthird 30\nfourth 30\nmalformed\nafter 0\n' | ./lobo_work.x -w 2 -q 1
+Expected result: Nonzero exit status and a malformed-input error;
+submitted, accepted, and completed are all 4; rejected is 0;
+the statistics summary appears once.
+Observed result: PASS. All 4 valid jobs completed, the malformed
+line produced an error, and the job after it was not submitted.
+Failure this test would reveal: Dropped work during shutdown,
+processing input after an error, or duplicate statistics output.
+
+This extends the supplied malformed-input test by using four timed
+jobs with a queue capacity of 1 and adding a valid job after the
+malformed line to verify that input processing stops.
 
 
 ### `student-test-4-comments-blanks.sh` (extra credit)
