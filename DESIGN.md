@@ -12,7 +12,7 @@ replacing each `@TODO` line.
 
 ## What each person contributed:
 
-- Prasen contributed by implementing the mutex locks, conditional variables, and implementing the worker function.
+- Prasen contributed by implementing the mutex locks, conditional variables, and the worker function.
 
 - Luis: I worked on student-test-1. It was inspired by test-2-basic-work.sh but instead of using
 placeholder jobs with no duration we tested on the 'short.xt' sample job given. I also made sure that our code ran on blue, and that all the tests behaved as expected.
@@ -36,8 +36,30 @@ If you changed a provided file or public interface, explain the change and its
 effect on the rest of the program. Otherwise, state that the provided interfaces
 were preserved.
 
-student-test-1-work.sh: Added implementation for student-test-1.
-student-test-4-comments-blanks.sh: Added implementation for student-test-4 (extra credit).
+**Files we didn't change:**
+- `work_pool.h`
+- `work_queue.c`
+- `work_queue.h`
+- `job_parse.c`
+- `job_parse.h`
+- `lobo_work.h`
+- `Makefile`
+
+**Changed files:**
+
+- `work_pool.c`: We modified `work_pool.c` because this was where we did our pool implementation.
+  The changes we made to `work_pool.c` do not affect the rest of the program
+  other than making the pool actually run jobs on multiple worker threads.
+- `lobo_work.c`: We modified `lobo_work.c` so that the `worker_count` argument
+  gets passed into `lobo_work_pool_create` and printed in the final stats line.
+- `tests/`: We added `student-test-1-work.sh`,
+  `student-test-2-concurrency-or-stress.sh`,
+  `student-test-3-shutdown-or-parsing-or-statistics.sh`, and
+  `student-test-4-comments-blanks.sh` (extra credit).
+
+**Public interface:**
+
+We did not change any of the public interfaces.
 
 
 ## Worker-pool synchronization
@@ -126,24 +148,40 @@ Address only the important implementation decisions:
 Do not restate the assignment requirements. Describe how your code implements
 them.
 
-Each worker loops forever until the pool closes. On every iteration it grabs
-the pool lock and waits on not_empty as long as the queue is empty and the
-pool is still open. If the worker wakes up and the queue is still empty, that
-means the pool has been closed so it drops the lock and returns.
+For our implemenation, we have each worker running an infinite loop that starts
+by locking `pool->lock`. While there isn't a job available and the pool isn't closed,
+the worker waits on the `not_empty` condition. The wait also releases the mutex while
+the worker sleeps.
 
-If its not close it pops the oldest job off the queue, signals not_full so any
-blocked submitter can make progress, then it increases 'active'. Then it releases 
-the lock before calling the runner which is what actually lets multiple workers overlap. 
-When the runner returns, the worker reacquires the lock just long enough to decrement 
-active and increase completed, then heads back to the top of the loop.
+Once the worker gets the lock again and the queue is non-empty, the worker then
+calls `lobo_work_queue_pop` to copy the oldest job into a local variable, and then
+the worker signals `not_full` so that a blocked producer can then reuse the freed slot.
+The worker then increments `active`, and updates `stats.max_active` if `active`
+is greater than the current `stats.max_active` value. After this the worker releases the mutex
+and the job runner is called so that other workers and the main thread can acquire the lock while the job runs.
 
-Closing is what actually stops the loop. lobo_work_pool_close sets 'closed' and
-broadcasts both condition variables so any worker waiting on not_empty
-wakes up. Workers that still see jobs on the queue keep draining them, they
-only exit once the queue is actually empty. After the broadcast, 'close'
-joins every worker so by the time it returns every accepted job has run.
+When the job runner finishes, the worker relocks the mutex, decrements `active`,
+increments `stats.completed`, and then unlocks. Afterward, it then loops again for the next job.
 
+The worker exits when the wait loop ends with `queue.count == 0`, which
+means the queue is empty and `closed` is set. `lobo_work_pool_close` sets
+`closed` and broadcasts `not_empty`, so idle workers wake up and return. A
+worker that wakes while jobs remain in the queue keeps popping and running them,
+so every accepted job finishes before the workers return. `close` then joins
+all worker threads, so no job is lost or still running when it returns.
 
+```text
+loop:
+    lock
+    while queue empty and not closed: wait(not_empty)
+    if queue empty:
+        unlock; return
+    pop job; signal(not_full)
+    active++; max_active = max(max_active, active)
+    unlock
+    runner(job)                # no lock held
+    lock; active--; completed++; unlock
+```
 
 ## Testing
 
