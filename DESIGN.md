@@ -9,24 +9,21 @@ replacing each `@TODO` line.
 - Luis Cortes
 - Evode Manirahari
 
-
 ## What each person contributed:
 
-- Prasen contributed by implementing the mutex locks, conditional variables, and the worker function.
+- Prasen: I worked on the implementation code for the worker pool. I contributed by implementing the mutex locks, conditional variables, and the worker loop.
 
 - Luis: I worked on student-test-1. It was inspired by test-2-basic-work.sh but instead of using
-placeholder jobs with no duration we tested on the 'short.xt' sample job given. I also made sure that our code ran on blue, and that all the tests behaved as expected.
+  placeholder jobs with no duration we tested on the 'short.xt' sample job given. I also made sure that our code ran on blue, and that all the tests behaved as expected.
 
 - Evode: Wrote student-test-2 to check that 40 jobs complete under
   queue pressure while multiple workers run concurrently. Wrote
   student-test-3 to verify that malformed input stops further
   submissions while previously accepted jobs finish.
 
-
 ## How you coordinated changes and testing:
 
 Most of the coordination happened through a group chat we made. We took turns reviewing and adding in our contributions to the project. Some coodination also happened before/after class. We also made sure to go over each other's work to double check the updates being made. We used GitHub to keep track of all the changes being made and to make sure we were working on the most up to date version of the project. When it came to testing that was mainly done locally as we implemented each test. Once the test were confirmed to be working locally we also tested them on blue.
-
 
 ## Module and interface changes
 
@@ -37,6 +34,7 @@ effect on the rest of the program. Otherwise, state that the provided interfaces
 were preserved.
 
 **Files we didn't change:**
+
 - `work_pool.h`
 - `work_queue.c`
 - `work_queue.h`
@@ -61,16 +59,15 @@ were preserved.
 
 We did not change any of the public interfaces.
 
-
 ## Worker-pool synchronization
 
 List every mutex and condition variable in your implementation. Use the
 appropriate format below for each synchronization object, using these notes:
 
-* use the exact variable or field name from your code.
-* for "Location," give the source or header filename and, when applicable, the containing struct type and field name.
-* for thread-role fields, use only: "main thread", "worker threads", or "both".
-* for a condition variable, describe the predicate checked in the corresponding while loop.
+- use the exact variable or field name from your code.
+- for "Location," give the source or header filename and, when applicable, the containing struct type and field name.
+- for thread-role fields, use only: "main thread", "worker threads", or "both".
+- for a condition variable, describe the predicate checked in the corresponding while loop.
 
 For a mutex:
 
@@ -98,6 +95,7 @@ Condition being waited for:
 ```
 
 ### Mutexes
+
 ```text
 Mutex variable name or struct field: lock
 Location: work_pool.c, struct LoboWorkPool, field lock
@@ -109,6 +107,7 @@ Shared state protected: queue, stats, active, and closed.
 ```
 
 ### Condition Variables
+
 ```text
 Condition-variable name or struct field: not_empty
 Location: work_pool.c, struct LoboWorkPool, field not_empty
@@ -131,18 +130,17 @@ Associated mutex: lock
 Condition being waited for: the queue has room for another job or the pool is closed.
 ```
 
-
 ## Worker-loop summary
 
 Describe the worker loop in a few paragraphs or a short fenced pseudocode block.
 Address only the important implementation decisions:
 
-* what a worker does when no job is available;
-* how it obtains a job safely;
-* when it releases the mutex;
-* when it calls the job runner;
-* when it updates active and completed counts; and
-* how it exits during pool closure, including what tells it that no more jobs
+- what a worker does when no job is available;
+- how it obtains a job safely;
+- when it releases the mutex;
+- when it calls the job runner;
+- when it updates active and completed counts; and
+- how it exits during pool closure, including what tells it that no more jobs
   will arrive and whether it finishes queued jobs before returning.
 
 Do not restate the assignment requirements. Describe how your code implements
@@ -207,7 +205,6 @@ Expected result: Exit status is zero. Final stats line shows submitted: 3, accep
 Observed result: PASS. All three jobs are accepted and completed, no jobs are rejected, max_active stays within 1 and 2, the run takes long enough to confirm the jobs actually slept.
 Failure this test would reveal: Jobs being skipped or dropped, max_active exceeding the worker count, the pool returning before work finishes, the runner being short circuited so the sleeps never actually happen.
 
-
 ### `student-test-2-concurrency-or-stress.sh`
 
 Test: Concurrency under queue pressure.
@@ -243,7 +240,6 @@ This extends the supplied malformed-input test by using four timed
 jobs with a queue capacity of 1 and adding a valid job after the
 malformed line to verify that input processing stops.
 
-
 ### `student-test-4-comments-blanks.sh` (extra credit)
 
 Test: student-test-4-comments-blanks.sh
@@ -252,7 +248,6 @@ Command: ./lobo_work.x --workers 2 --queue 4 < sample_jobs/comments-and-blanks.t
 Expected result: Exit status is zero. Final stats line shows submitted: 3, accepted: 3, rejected: 0, completed: 3, workers: 2, queue_capacity: 4, and max_active between 1 and 2.
 Observed result: PASS. Only the 3 valid jobs (alpha, beta, gamma) show up in the stats, nothing is rejected, and max_active stays within 1 and 2.
 Failure this test would reveal: The parser counting comment or blank lines as jobs, inflating submitted/accepted, or the pool mishandling input that has gaps between valid lines.
-
 
 ## Additional design decisions
 
